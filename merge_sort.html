@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Merge Sort Animation</title>
+  <style>
+    /* Container for the array bars */
+    #array-container {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      width: 90%;
+      height: 400px;
+      margin: 20px auto;
+      border: 1px solid #ddd;
+      background: #f9f9f9;
+    }
+    /* Each bar representing an array element */
+    .array-bar {
+      background-color: turquoise;
+      margin: 0 2px;
+      width: 20px;
+      transition: height 0.1s, background-color 0.1s;
+    }
+    /* Button styling */
+    #start-btn {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="array-container"></div>
+  <button id="start-btn">Start Merge Sort</button>
+
+  <script>
+    // Global variables and settings
+    const container = document.getElementById('array-container');
+    const startBtn = document.getElementById('start-btn');
+    const NUM_BARS = 30;          // Number of bars in the array
+    const animationDelay = 100;   // Delay (in ms) between animation steps
+    let array = [];               // The main array
+
+    // Generate an array of random numbers and render it as bars
+    function generateArray() {
+      array = [];
+      for (let i = 0; i < NUM_BARS; i++) {
+        // Random heights between 20 and 370 pixels
+        array.push(Math.floor(Math.random() * 350) + 20);
+      }
+      renderArray();
+    }
+
+    // Render the array bars in the container
+    function renderArray() {
+      container.innerHTML = '';
+      for (let i = 0; i < array.length; i++) {
+        const bar = document.createElement('div');
+        bar.classList.add('array-bar');
+        bar.style.height = array[i] + 'px';
+        bar.id = 'bar-' + i;
+        container.appendChild(bar);
+      }
+    }
+
+    // Merge sort function that collects animation steps.
+    // It sorts the array in place and pushes "overwrite" animations that record
+    // the index and the new height (value) to be written.
+    function mergeSort(arr, start, end, animations) {
+      if (end - start <= 1) return;
+      const mid = Math.floor((start + end) / 2);
+      mergeSort(arr, start, mid, animations);
+      mergeSort(arr, mid, end, animations);
+      merge(arr, start, mid, end, animations);
+    }
+
+    // Merge function that merges two sorted subarrays.
+    // Each time a value is written into the main array, we push an animation step.
+    function merge(arr, start, mid, end, animations) {
+      let left = arr.slice(start, mid);
+      let right = arr.slice(mid, end);
+      let i = 0, j = 0, k = start;
+
+      while (i < left.length && j < right.length) {
+        if (left[i] <= right[j]) {
+          animations.push({ type: 'overwrite', index: k, newValue: left[i] });
+          arr[k++] = left[i++];
+        } else {
+          animations.push({ type: 'overwrite', index: k, newValue: right[j] });
+          arr[k++] = right[j++];
+        }
+      }
+
+      while (i < left.length) {
+        animations.push({ type: 'overwrite', index: k, newValue: left[i] });
+        arr[k++] = left[i++];
+      }
+      while (j < right.length) {
+        animations.push({ type: 'overwrite', index: k, newValue: right[j] });
+        arr[k++] = right[j++];
+      }
+    }
+
+    // Animate the merge sort steps.
+    // We first run merge sort on a copy of the array to collect all animations.
+    // Then, we play back each animation with a delay.
+    function animateMergeSort() {
+      const animations = [];
+      // Make a copy of the array for sorting so we don’t disturb the original
+      const auxArray = array.slice();
+      mergeSort(auxArray, 0, auxArray.length, animations);
+
+      // Play back each animation step with a setTimeout delay.
+      for (let i = 0; i < animations.length; i++) {
+        setTimeout(() => {
+          const animation = animations[i];
+          if (animation.type === 'overwrite') {
+            const bar = document.getElementById('bar-' + animation.index);
+            // Update the height to show the new value
+            bar.style.height = animation.newValue + 'px';
+            // Change color to highlight the update, then revert back
+            bar.style.backgroundColor = 'red';
+            setTimeout(() => {
+              bar.style.backgroundColor = 'turquoise';
+            }, animationDelay / 2);
+          }
+        }, i * animationDelay);
+      }
+    }
+
+    // Set up the button to generate a new array and animate merge sort on click.
+    startBtn.addEventListener('click', () => {
+      generateArray();
+      animateMergeSort();
+    });
+
+    // Generate an initial array when the page loads.
+    generateArray();
+  </script>
+</body>
+</html>
